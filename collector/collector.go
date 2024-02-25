@@ -3,13 +3,13 @@ package collector
 import "github.com/prometheus/client_golang/prometheus"
 
 type OpenGNBCollector struct {
-	collectors         []prometheus.Collector
-	receiveBytes       *prometheus.GaugeVec
-	transmitBytes      *prometheus.GaugeVec
-	keepAliveTimestamp *prometheus.GaugeVec
-	nodeState          *prometheus.GaugeVec
-	addr4PingLatency   *prometheus.GaugeVec
-	addr6PingLatency   *prometheus.GaugeVec
+	collectors       []prometheus.Collector
+	receiveBytes     *prometheus.GaugeVec
+	transmitBytes    *prometheus.GaugeVec
+	instanceUp       *prometheus.GaugeVec
+	nodeState        *prometheus.GaugeVec
+	addr4PingLatency *prometheus.GaugeVec
+	addr6PingLatency *prometheus.GaugeVec
 }
 
 func NewOpenGNBCollector() *OpenGNBCollector {
@@ -31,13 +31,13 @@ func NewOpenGNBCollector() *OpenGNBCollector {
 	}, []string{"network", "node"})
 	c.collectors = append(c.collectors, c.transmitBytes)
 
-	c.keepAliveTimestamp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	c.instanceUp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "opengnb",
-		Subsystem: "status",
-		Name:      "keep_alive_timestamp",
+		Subsystem: "instance",
+		Name:      "up",
 		Help:      "OpenGNB keep alive timestamp",
 	}, []string{"network"})
-	c.collectors = append(c.collectors, c.keepAliveTimestamp)
+	c.collectors = append(c.collectors, c.instanceUp)
 
 	c.nodeState = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "opengnb",
@@ -74,8 +74,8 @@ func (c *OpenGNBCollector) SetTransmitBytes(network, node string, value uint64) 
 	c.transmitBytes.WithLabelValues(network, node).Set(float64(value))
 }
 
-func (c *OpenGNBCollector) SetKeepAliveTimestamp(network string, value int64) {
-	c.keepAliveTimestamp.WithLabelValues(network).Set(float64(value))
+func (c *OpenGNBCollector) SetInstanceUp(network string, value int8) {
+	c.instanceUp.WithLabelValues(network).Set(float64(value))
 }
 
 func (c *OpenGNBCollector) SetNodeState(network, node string, value uint8) {

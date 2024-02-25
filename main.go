@@ -298,17 +298,16 @@ func main() {
 			if err != nil {
 				return err
 			}
+			network := strings.TrimPrefix(cz.IFName.String(), "gnb-")
 
 			sz, err := ctrl.ReadStatusZone(ra, offset.StatusZone)
 			if err != nil {
 				return err
 			}
-
-			network := strings.TrimPrefix(cz.IFName.String(), "gnb-")
-
-			c.SetKeepAliveTimestamp(network, sz.KeepAliveTimestamp)
-
-			if time.Now().Unix()-sz.KeepAliveTimestamp > 30 {
+			if time.Now().Unix()-sz.KeepAliveTimestamp < 5 {
+				c.SetInstanceUp(network, 1)
+			} else {
+				c.SetInstanceUp(network, 0)
 				return nil
 			}
 
@@ -322,11 +321,13 @@ func main() {
 					continue
 				}
 				nodeID := node.NodeID.String()
-				c.SetReceiveBytes(network, nodeID, node.OutBytes)
-				c.SetTransmitBytes(network, nodeID, node.InBytes)
 				c.SetNodeState(network, nodeID, uint8(node.NodeState))
-				c.SetAddr4PingLatency(network, nodeID, node.Addr4PingLatency/1000)
-				c.SetAddr6PingLatency(network, nodeID, node.Addr6PingLatency/1000)
+				if node.NodeState != NodeStateUnreachable {
+					c.SetReceiveBytes(network, nodeID, node.OutBytes)
+					c.SetTransmitBytes(network, nodeID, node.InBytes)
+					c.SetAddr4PingLatency(network, nodeID, node.Addr4PingLatency/1000)
+					c.SetAddr6PingLatency(network, nodeID, node.Addr6PingLatency/1000)
+				}
 			}
 			return nil
 		})
